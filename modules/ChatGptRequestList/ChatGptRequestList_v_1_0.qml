@@ -46,8 +46,7 @@ Rectangle{
             }
         }
     }
-    Item{id: xUqpsPicoWave}
-    Item{id: xAudioPlayers}
+    Item{id: xUqps}
     Timer{
         id: tCheck
         running: lv.count>0 && !r.playing
@@ -112,7 +111,6 @@ Rectangle{
     }
     function speak(t, isTemp){
         mkUqpPico2Wave(t)
-
     }
     function mkUqpPico2Wave(msg){
         let d=new Date(Date.now())
@@ -121,38 +119,42 @@ Rectangle{
         c+='import unik.UnikQProcess 1.0\n'
         c+='Item{\n'
         c+='    id: iUqpPico2Wave'+ms+'\n'
+        c+='    property alias uqp: uqpPico2Wave'+ms+'\n'
         c+='    UnikQProcess{\n'
         c+='        id: uqpPico2Wave'+ms+'\n'
         c+='        onLogDataChanged:{\n'
         //c+='            //if(app.dev)log.lv(\'Audio: '+filePath+'\')\n'
-        c+='                    chatGptView.l.lv(\'Gpt: \'+logData)\n'
+        c+='                    let str=logData\n'
+        c+='                    if(str.substring(0,1)===\'\\n\'){\n'
+        c+='                        str=str.substring(1,str.length)\n'
+        c+='                    }\n'
+        c+='                    if(str.substring(0,1)===\'\\n\'){\n'
+        c+='                        str=str.substring(1,str.length-1)\n'
+        c+='                    }\n'
+        c+='                    chatGptView.l.lv(\'Gpt: \'+str)\n'
         c+='                    lm.remove(0)\n'
         c+='                    r.playing=false\n'
         c+='                    uqpPico2Wave'+ms+'.upkill()\n'
         c+='                    iUqpPico2Wave'+ms+'.destroy(500)\n'
         c+='        }\n'
         c+='        Component.onCompleted:{\n'
+        c+='                    r.playing=true\n'
         c+='            run(\'python3 '+unik.getPath(5)+'/chatgpt.py \"'+msg+'\" \"'+app.apiKey+'\" \')\n'
         c+='        }'
         c+='    }'
         c+='}'
         //console.log(c)
-        let comp=Qt.createQmlObject(c, xUqpsPicoWave, 'uqpcode')
+        let comp=Qt.createQmlObject(c, xUqps, 'uqpcode')
     }
-    function play(){
-        if(audioPlayer)audioPlayer.play()
-        //r.mp.play()
-    }
-    function pause(){
-        if(audioPlayer)audioPlayer.pause()
-    }
-    function stop(){
-        if(audioPlayer)audioPlayer.stop()
-    }
-    function previous(){
-        //r.mplis.previous()
-    }
-    function next(){
-        //r.mplis.next()
+    function clear(){
+        if(r.playing){
+            for(var i=0;i<xUqps.children.length;i++){
+                let uqp=xUqps.children[i]
+                //uqp.uqp.upKill()
+                uqp.destroy(1000)
+            }
+            chatGptView.l.lv('Qml-ChatGpt: Se ha cancelado el requerimiento a Gpt.')
+        }
+        r.playing=false
     }
 }
