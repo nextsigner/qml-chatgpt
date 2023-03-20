@@ -4,7 +4,7 @@ import os
 
 entrada=sys.argv[1]
 # Set the API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = sys.argv[2]
 # Use the ChatGPT model to generate text
 model_engine = "text-davinci-003"
 prompt = ""+entrada

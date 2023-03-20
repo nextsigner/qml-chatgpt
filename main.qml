@@ -50,5 +50,8 @@ ApplicationWindow{
     }
     Component.onCompleted: {
         app.requestActivate()
+        let apiKey=unik.getFile('apikey.txt').replace(/\n/g, '')
+        app.apiKey=apiKey
+        chatGptView.l.lv('ApiKey:\n['+apiKey+']')
     }
 }
