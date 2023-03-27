@@ -30,6 +30,8 @@ ApplicationWindow{
         property int maximunSecondsForWait: 30
 
         property int vw: 0
+
+        property bool helpInitEnabled: true
     }
     Item{
         id: xApp
@@ -57,7 +59,25 @@ ApplicationWindow{
 
     Shortcut{
         sequence: 'Esc'
-        onActivated: Qt.quit()
+        onActivated: {
+            if(chatGptView.l.t.focus){
+                chatGptView.ti.focus=true
+                return
+            }
+            if(chatGptView.ti.focus){
+                chatGptView.ti.focus=false
+                return
+            }
+            Qt.quit()
+        }
+    }
+    Shortcut{
+        sequence: 'Up'
+        onActivated:chatGptView.l.t.focus=true
+    }
+    Shortcut{
+        sequence: 'Down'
+        onActivated:chatGptView.ti.focus=true
     }
     Shortcut{
         sequence: 'Ctrl+Left'
@@ -84,10 +104,12 @@ ApplicationWindow{
         let apiKey=unik.getFile('apikey.txt').replace(/\n/g, '')
         app.apiKey=apiKey
         let msgInicial='Hola Gpt. ¿Estas en linea?'
-        chatGptView.l.lv('Iniciando Qml-ChatGpt...')
-        chatGptView.l.lv('Preguntando si el ChatGpt está en línea...')
-        chatGptView.l.lv(msgInicial)
-        chatGptRequestList.loadReq(msgInicial)
+        if(!app.dev){
+            chatGptView.l.lv('Iniciando Qml-ChatGpt...')
+            chatGptView.l.lv('Preguntando si el ChatGpt está en línea...')
+            chatGptView.l.lv(msgInicial)
+            chatGptRequestList.loadReq(msgInicial)
+        }
         //chatGptView.l.lv('ApiKey:\n['+apiKey+']')
     }
 }

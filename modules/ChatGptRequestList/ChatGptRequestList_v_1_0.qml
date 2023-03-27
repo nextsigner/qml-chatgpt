@@ -124,10 +124,10 @@ Rectangle{
         c+='                        str=str.substring(1,str.length-1)\n'
         c+='                    }\n'
         if(r.cantMaxRequestList>0){
-            c+='                    chatGptView.l.lv(\'Gpt respuesta '+r.currentRequestMaked+': \'+str)\n'
+            c+='                    chatGptView.l.lv(\'Gpt respuesta '+r.currentRequestMaked+': \'+str+\'\\n\')\n'
             c+='                    chatGptResponseList.addText(str, iUqpPico2Wave'+ms+'.ci)\n'
         }else{
-            c+='                    chatGptView.l.lv(\'Gpt: \'+str)\n'
+            c+='                    chatGptView.l.lv(\'Gpt: \'+str+\'\\n\')\n'
             c+='                    chatGptResponseList.addText(str, -1)\n'
         }
         c+='                    if(iUqpPico2Wave'+ms+'.ci==='+r.cantMaxRequestList+' && r.cantMaxRequestList > 0){\n'

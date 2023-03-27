@@ -29,7 +29,7 @@ Rectangle{
         ListView{
             id: lv
             width: r.width-app.fs
-            height: r.height-tit.contentHeight-xTools.height-app.fs*2
+            height: r.height-tit.contentHeight-app.fs
             model:lm
             delegate: compRes
             spacing: app.fs*0.25
@@ -48,68 +48,6 @@ Rectangle{
                     }
                 }
 
-            }
-        }
-        Rectangle{
-            id: xTools
-            width: r.width
-            height: colTools.height+app.fs*0.5
-            border.width: 1
-            border.color: apps.fontColor
-            color: apps.backgroundColor
-            Column{
-                id: colTools
-                spacing: app.fs*0.25
-                anchors.centerIn: parent
-                Row{
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    Button{
-                        id: botSort
-                        text: 'Limpiar'
-                        anchors.verticalCenter: parent.verticalCenter
-                        onClicked: {
-                            r.clear()
-                        }
-                    }
-                }
-                Row{
-                    spacing: app.fs*0.25
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    Item{
-                        width: xTools.width-botSave.width-app.fs//-txtLabelFile.contentWidth
-                        height: parent.height-app.fs
-                        anchors.verticalCenter: parent.verticalCenter
-                        Rectangle{
-                            anchors.fill: parent
-                            border.width: 1
-                            border.color: apps.fontColor
-                            color: apps.backgroundColor
-                            clip: true
-                            TextInput{
-                                id: tiFile
-                                color: apps.fontColor
-                                width: parent.width-app.fs
-                                height: parent.height
-                                anchors.centerIn: parent
-                            }
-                        }
-                        Text{
-                            id: txtLabelFile
-                            text: '<b>Archivo: </b>'
-                            font.pixelSize: app.fs*0.5
-                            color: apps.fontColor
-                            anchors.bottom: parent.top
-                        }
-                    }
-                    Button{
-                        id: botSave
-                        text: 'Guardar'
-                        anchors.verticalCenter: parent.verticalCenter
-                        onClicked: {
-                            saveFileData()
-                        }
-                    }
-                }
             }
         }
     }
@@ -187,9 +125,8 @@ Rectangle{
         }
         return d
     }
-    function saveFileData(){
+    function saveFileData(fileName){
         let fileData=getListData()
-        let fileName=tiFile.text
         if(unik.fileExist(fileName)){
             chatGptView.l.lv('Error! Este archivo '+fileName+' ya existe!')
             return

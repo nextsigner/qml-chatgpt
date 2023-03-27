@@ -9,10 +9,12 @@ Rectangle{
     color: 'black'
     visible: true//apps.showLog
     border.width: 2
-    border.color: 'white'
+    border.color: apps.fontColor
     clip: true
     property bool ww: true
     property alias fs: taLog.font.pixelSize
+    property alias t: taLog
+    property alias text: taLog.text
     MouseArea{
         anchors.fill: parent
         onClicked: apps.showLog=false
@@ -45,6 +47,7 @@ Rectangle{
         }
     }
     Rectangle{
+        visible: false
         width: app.fs*0.5
         height: width
         anchors.right: parent.right
