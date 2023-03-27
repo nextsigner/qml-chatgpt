@@ -5,7 +5,8 @@ import unik.Unik 1.0
 import unik.UnikQProcess 1.0
 
 import ChatGptRequestList 1.0
-import ChatGptView 1.0
+import ChatGptView 1.1
+import ChatGptResponseList 1.0
 
 ApplicationWindow{
     id: app
@@ -13,6 +14,7 @@ ApplicationWindow{
     visibility: 'Maximized'
     color: 'black'
     title: 'Qml-ChatGpt by @nextsigner'
+    property bool dev: false
     property int fs: apps.fs
     Unik{id: unik}
     property string apiKey: ''
@@ -26,6 +28,8 @@ ApplicationWindow{
         property bool showLog: true
         property bool speakEnabled: true
         property int maximunSecondsForWait: 30
+
+        property int vw: 0
     }
     Item{
         id: xApp
@@ -34,14 +38,17 @@ ApplicationWindow{
             id: col
             Item{
                 id: xChatGptRequestList
-                width: app.width/2
+                width: (app.width/2)-app.fs*apps.vw
                 height: app.height
-                visible: apps.showChatGptRequestList
+                //visible: !app.dev?apps.showChatGptRequestList:true
                 ChatGptRequestList{id: chatGptRequestList}
+                ChatGptResponseList{id: chatGptResponseList}
             }
             Item{
                 id: xChatGptView
-                width: apps.showChatGptRequestList?app.width/2:app.width
+                //width: app.dev?app.width/2:(apps.showChatGptRequestList?app.width/2:app.width)
+                //xChatGptRequestList
+                width: app.width-xChatGptRequestList.width
                 height: app.height
                 ChatGptView{id: chatGptView}
             }
@@ -52,7 +59,27 @@ ApplicationWindow{
         sequence: 'Esc'
         onActivated: Qt.quit()
     }
+    Shortcut{
+        sequence: 'Ctrl+Left'
+        onActivated: {
+            if(apps.vw<20){
+                apps.vw++
+            }
+        }
+    }
+    Shortcut{
+        sequence: 'Ctrl+Right'
+        onActivated: {
+            if(apps.vw>0){
+                apps.vw--
+            }
+        }
+    }
     Component.onCompleted: {
+        //Check is dev with the arg -dev
+        if(Qt.application.arguments.indexOf('-dev')>=0){
+            app.dev=true
+        }
         app.requestActivate()
         let apiKey=unik.getFile('apikey.txt').replace(/\n/g, '')
         app.apiKey=apiKey
@@ -60,7 +87,7 @@ ApplicationWindow{
         chatGptView.l.lv('Iniciando Qml-ChatGpt...')
         chatGptView.l.lv('Preguntando si el ChatGpt está en línea...')
         chatGptView.l.lv(msgInicial)
-        chatGptRequestList.speak(msgInicial, false)
+        chatGptRequestList.loadReq(msgInicial)
         //chatGptView.l.lv('ApiKey:\n['+apiKey+']')
     }
 }

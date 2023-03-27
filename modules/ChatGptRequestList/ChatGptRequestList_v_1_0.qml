@@ -20,8 +20,12 @@ Rectangle{
 
     property alias settings: s
 
+    property int currentRequestMaked: 0
+    property int cantMaxRequestList: 0
+
     property int cantAudiosMaked: 0
     property bool playing: false
+    property alias t: tCheck
 
     Behavior on x{NumberAnimation{duration: 250; easing.type: Easing.InOutQuad}}
     Settings{
@@ -30,31 +34,15 @@ Rectangle{
         property bool repAutomatica: true
         property string stateShowOrHide: 'hide'
     }
-    Audio{
-        id: apt
-        autoPlay: true
-        onPlaybackStateChanged: {
-            if(r.audioPlayer && playbackState===Audio.StoppedState){
-                if(r.audioPlayer.duration>r.audioPlayer.position){
-                    r.audioPlayer.seek(0)
-                    r.audioPlayer.play()
-                }
-
-            }
-            if(r.audioPlayer && playbackState===Audio.PlayingState){
-                r.audioPlayer.pause()
-            }
-        }
-    }
     Item{id: xUqps}
     Timer{
         id: tCheck
-        running: lv.count>0 && !r.playing
+        running: lv.count > 0 && !r.playing
         repeat: false
         interval: 1000
         onTriggered: {
             //mkAudio(lm.get(0).texto)
-            mkUqpPico2Wave(lm.get(0).texto, lm.get(0).url, false)
+            mkUqpPico2Wave(lm.get(0).req)
         }
     }
     Column{
@@ -78,11 +66,9 @@ Rectangle{
     }
     ListModel{
         id: lm
-        function addItem(fn, u, t){
+        function addItem(r){
             return {
-                fileName: fn,
-                url: u,
-                texto: t
+                req: r
             }
         }
 
@@ -96,7 +82,8 @@ Rectangle{
             border.color: 'blue'
             Text{
                 id: txt
-                text: '<b>Texto: </b>'+texto+' <br /><b>Url: </b>'+url+' <br /><b>Nombre: </b>'+fileName
+                //text: '<b>Texto: </b>'+texto+' <br /><b>Url: </b>'+url+' <br /><b>Nombre: </b>'+fileName
+                text: '<b>Texto: </b>'+req
                 width: parent.width-app.fs
                 wrapMode: Text.WrapAnywhere
                 //textFormat: Text.RichText
@@ -109,10 +96,14 @@ Rectangle{
             }
         }
     }
-    function speak(t, isTemp){
-        mkUqpPico2Wave(t)
+    function loadReq(t){
+        lm.append(lm.addItem(t))
+        //mkUqpPico2Wave(t)
     }
     function mkUqpPico2Wave(msg){
+        if(r.cantMaxRequestList>0){
+            r.currentRequestMaked++
+        }
         let d=new Date(Date.now())
         let ms=d.getTime()
         let c='import QtQuick 2.0\n'
@@ -120,6 +111,7 @@ Rectangle{
         c+='Item{\n'
         c+='    id: iUqpPico2Wave'+ms+'\n'
         c+='    property alias uqp: uqpPico2Wave'+ms+'\n'
+        c+='    property int ci: '+r.currentRequestMaked+'\n'
         c+='    UnikQProcess{\n'
         c+='        id: uqpPico2Wave'+ms+'\n'
         c+='        onLogDataChanged:{\n'
@@ -131,11 +123,22 @@ Rectangle{
         c+='                    if(str.substring(0,1)===\'\\n\'){\n'
         c+='                        str=str.substring(1,str.length-1)\n'
         c+='                    }\n'
-        c+='                    chatGptView.l.lv(\'Gpt: \'+str)\n'
-        c+='                    lm.remove(0)\n'
+        if(r.cantMaxRequestList>0){
+            c+='                    chatGptView.l.lv(\'Gpt respuesta '+r.currentRequestMaked+': \'+str)\n'
+            c+='                    chatGptResponseList.addText(str, iUqpPico2Wave'+ms+'.ci)\n'
+        }else{
+            c+='                    chatGptView.l.lv(\'Gpt: \'+str)\n'
+            c+='                    chatGptResponseList.addText(str, -1)\n'
+        }
+        c+='                    if(iUqpPico2Wave'+ms+'.ci==='+r.cantMaxRequestList+' && r.cantMaxRequestList > 0){\n'
+        c+='                        if(app.dev)chatGptView.l.lv(\'Ci es igual a maximo: '+r.currentRequestMaked+'==='+r.cantMaxRequestList+'\')\n'
+        //c+='                        chatGptResponseList.sortList()\n'
+        c+='                    }\n'
+        c+='                    if(lm.count>0)lm.remove(0)\n'
         c+='                    r.playing=false\n'
-        c+='                    uqpPico2Wave'+ms+'.upkill()\n'
-        c+='                    iUqpPico2Wave'+ms+'.destroy(500)\n'
+        //c+='                    uqpPico2Wave'+ms+'.upkill()\n'
+        //c+='                    iUqpPico2Wave'+ms+'.destroy(500)\n'
+        c+='                    iUqpPico2Wave'+ms+'.destroy(50000)\n'
         c+='        }\n'
         c+='        Component.onCompleted:{\n'
         c+='                    r.playing=true\n'
