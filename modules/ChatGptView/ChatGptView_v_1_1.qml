@@ -158,7 +158,7 @@ Rectangle{
     }
     function isCmd(text){
         let ret=false
-        let cmds=['!r', '!hi',  '!dev', '!h', '!help', '!l ', '!c', '!cr', '!sr', '!sl', '!cat']
+        let cmds=['!e', '!ea', '!se', '!r', '!hi',  '!dev', '!h', '!help', '!l ', '!c', '!cr', '!sr', '!sl', '!cat']
         for(var i=0; i < cmds.length; i++){
             //if(app.dev)log.lv('cmd '+i+': ['+cmds[i]+']')
             if(text.indexOf(cmds[i])>=0){
@@ -199,6 +199,21 @@ Rectangle{
             }
             return
         }
+        //Guardando requerimientos.
+        if(cmd==='!se'){
+            if(cmdList.length<2){
+                log.lv('Error! Falta escribir el nombre del archivo ')
+                log.lv('Ejemplo: !sl /home/miusuario/lista.txt')
+                return
+            }
+            if(!unik.fileExist(cmdList[1])){
+                log.lv('Guardando requerimiento en el archivo '+cmdList[1])
+                let fileName=cmdList[1]
+                chatGptRequestListEditor.saveFileData(fileName)
+            }
+            return
+        }
+        //Guardar texto de salida
         if(cmd==='!sl'){
             if(cmdList.length<2){
                 log.lv('Error! Falta escribir el nombre del archivo ')
@@ -240,6 +255,9 @@ Rectangle{
         if(cmd==='!cr'){
             chatGptResponseList.clear()
         }
+        if(cmd==='!e'){
+            app.editReqs=!app.editReqs
+        }
         if(cmd==='!dev'){
             app.dev=!app.dev
             if(app.dev){
@@ -248,6 +266,9 @@ Rectangle{
                 chatGptView.l.lv('Se ha desactivado el modo desarrollador.')
             }
 
+        }
+        if(cmd==='!ea'){
+            chatGptRequestListAppend(text)
         }
         if(cmd==='!h' || cmd==='!help' ){
             let hd='\n'
@@ -317,5 +338,19 @@ Rectangle{
     }
     function saveLog(){
 
+    }
+    function chatGptRequestListAppend(text){
+        let cmd=text.split(' ')
+        if(app.dev)log.lv('chatGptRequestListAppend()...')
+        if(app.dev)log.lv('cmd.length; '+cmd.length)
+        let req=''
+        if(cmd.length>1){
+            for(var i=1;i<cmd.length;i++){
+                if(cmd[i]!==''){
+                    req+=' '+cmd[i]
+                }
+            }
+        }
+        chatGptRequestListEditor.append(req)
     }
 }

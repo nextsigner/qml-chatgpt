@@ -1,23 +1,27 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.0
+import QtQuick.Window 2.0
 import Qt.labs.settings 1.1
 import unik.Unik 1.0
 import unik.UnikQProcess 1.0
 
-import ChatGptRequestList 1.0
-import ChatGptView 1.1
 import ChatGptResponseList 1.0
+import ChatGptRequestList 1.0
+import ChatGptRequestListEditor 1.0
+import ChatGptView 1.1
 
 ApplicationWindow{
     id: app
+    width: Screen.width
     visible: true
     visibility: 'Maximized'
-    color: 'black'
+    color: apps.backgroundColor
     title: 'Qml-ChatGpt by @nextsigner'
     property bool dev: false
     property int fs: apps.fs
     Unik{id: unik}
     property string apiKey: ''
+    property bool editReqs: false
     Settings{
         id: apps
         fileName: unik.getPath(5)+'/qml-chatgpt.cfg'
@@ -44,7 +48,8 @@ ApplicationWindow{
                 height: app.height
                 //visible: !app.dev?apps.showChatGptRequestList:true
                 ChatGptRequestList{id: chatGptRequestList}
-                ChatGptResponseList{id: chatGptResponseList}
+                ChatGptResponseList{id: chatGptResponseList; visible: !app.editReqs}
+                ChatGptRequestListEditor{id: chatGptRequestListEditor; visible: app.editReqs}
             }
             Item{
                 id: xChatGptView
