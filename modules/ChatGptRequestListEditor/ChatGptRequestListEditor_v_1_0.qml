@@ -106,7 +106,7 @@ Rectangle{
         let d=''
         for(var i=0;i<lm.count;i++){
             let resItem=lm.get(i).texto
-            d+=resItem+'\n\n'
+            d+=resItem+'\n'
         }
         return d
     }

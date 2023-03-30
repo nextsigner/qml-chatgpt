@@ -24,7 +24,7 @@ Rectangle{
         width: parent.width
         height: parent.height
         contentWidth: parent.width
-        contentHeight: taLog.contentHeight
+        contentHeight: taLog.contentHeight+app.fs
         clip: true
         Item{
             id: xTaLog

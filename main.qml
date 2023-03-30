@@ -19,9 +19,69 @@ ApplicationWindow{
     title: 'Qml-ChatGpt by @nextsigner'
     property bool dev: false
     property int fs: apps.fs
-    Unik{id: unik}
     property string apiKey: ''
+    property bool runInUqp: true
     property bool editReqs: false
+    property bool waitingGpt: false
+
+
+    Unik{id: unik}
+    UnikQProcess{
+        id: uqp
+        onLogOut: {
+            app.waitingGpt=false
+            chatGptView.l.lv('uqp.onLogOut dice: '+data)
+
+        }
+        onLogDataChanged: {
+            let ld=''+logData
+            if(ld.indexOf('XXXGGGGXXX@@@XXX')>=0){
+                ld=ld.split('XXXGGGGXXX@@@XXX')[0]
+            }
+            if(ld.substring(0,1)==='\n'){
+                ld=ld.substring(1, ld.length)
+            }
+            if(ld.substring(0,1)==='\n'){
+                ld=ld.substring(1, ld.length)
+            }
+            if(apps.markdownEnabled){
+                while(ld.substring(0,1)==='\n'){
+                    ld=ld.substring(1, ld.length)
+                }
+                //ld=ld.replace(/\n/g, '<br />\n')
+                ld=ld.replace(/\.\n/g, '. <br />\n')
+                let lines=ld.split('\n')
+                let nld=''
+                for(var i=0;i<lines.length;i++){
+                    if(lines[i].substring(0,1)==='#'){
+                        nld+='<br />\n'+lines[i]+'<br />\n'
+                    }else{
+                        nld+=lines[i]+'\n'
+                    }
+                }
+                ld=nld
+                /*
+                    Escribeme un artículo para un blog con que hable o explique los siguientes temas. 1). Escribe 3 párrafos en formato markdown sobre ¿Qué es el cambio climático?, 2). Escribe 1 párrafo con subtítulo sobre qué acciones tomar al respecto y 3). Escribe 1 párrafo con subtítulo ¿En qué año se descubrió este fenómeno?
+                */
+                //ld='### Gpt: <br />'+ld
+            }else{
+                ld='Gpt: '+ld
+            }
+
+            if(ld==='Gpt: ' || ld==='### Gpt: <br />')return
+            if(apps.markdownEnabled)chatGptView.l.clear()
+            chatGptView.l.lv(''+ld+'')
+            app.waitingGpt=false
+            chatGptView.ti.selectAll()
+        }
+        function conn(){
+            uqp.run("python3 /home/ns/nsp/qml-chatgpt/gpt.py "+app.apiKey,false)
+        }
+        Component.onCompleted: {
+            conn()
+        }
+    }
+
     Settings{
         id: apps
         fileName: unik.getPath(5)+'/qml-chatgpt.cfg'
@@ -36,6 +96,7 @@ ApplicationWindow{
         property int vw: 0
 
         property bool helpInitEnabled: true
+        property bool markdownEnabled: true
     }
     Item{
         id: xApp
@@ -98,6 +159,24 @@ ApplicationWindow{
             if(apps.vw>0){
                 apps.vw--
             }
+        }
+    }
+    Shortcut{
+        sequence: 'Ctrl+e'
+        onActivated: {
+            app.editReqs=!app.editReqs
+        }
+    }
+    Shortcut{
+        sequence: 'Ctrl+m'
+        onActivated: {
+            apps.markdownEnabled=!apps.markdownEnabled
+            if(apps.markdownEnabled){
+                chatGptView.l.lv('# Se ha habilitado el formato MarkDown.<br />')
+            }else{
+                chatGptView.l.lv('Se ha deshabilitado el formato MarkDown.')
+            }
+
         }
     }
     Component.onCompleted: {

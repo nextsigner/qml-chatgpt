@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import ZoolLogView 1.0
+import LoadingCircle 1.0
 Rectangle{
     id: r
     width: parent.width
@@ -18,7 +19,9 @@ Rectangle{
             width: r.width//app.width/2
             height: !chatGptRequestList.playing?r.height-xTi.height:r.height-xTi.height-xTxtWaiting.height
             fs: app.fs
+            t.textFormat:apps.markdownEnabled?Text.MarkdownText:Text.PlainText
             visible: true
+
             Timer{
                 running: parent.width<=0
                 repeat: true
@@ -30,6 +33,9 @@ Rectangle{
                 repeat: true
                 interval: 100
                 onTriggered: parent.height=r.height-xTi.height
+            }
+            LoadingCircle{
+                visible: app.waitingGpt
             }
         }
         Item{
@@ -123,14 +129,28 @@ Rectangle{
                 color: apps.fontColor
                 wrapMode: Text.WordWrap
                 anchors.centerIn: parent
+                onTextChanged: {
+                    setLogViewPrompt(text)
+                }
                 Keys.onReturnPressed: {
                     if(!r.isCmd(text)){
-                        log.lv('Yo: '+text)
-                        chatGptRequestList.cantMaxRequestList=0
-                        chatGptRequestList.currentRequestMaked=0
-                        chatGptRequestList.loadReq(text)
+                        if(app.runInUqp){
+                            //chatGptView.l.lv('Ejecutando UQP...')
+                            let prompt=text
+                            if(apps.markdownEnabled){
+                                prompt+='. Respondeme en formato MarkDown.'
+                            }
+                            uqp.runWrite(prompt)
+                            app.waitingGpt=true
+                        }else{
+                            log.lv('Yo: '+text)
+                            chatGptRequestList.cantMaxRequestList=0
+                            chatGptRequestList.currentRequestMaked=0
+                            chatGptRequestList.loadReq(text)
+                        }
+
                     }else{
-                        log.lv('Ejecutando el comando: '+text)
+                        //log.lv('Ejecutando el comando: '+text)
                         r.run(text)
                     }
                 }
@@ -146,11 +166,16 @@ Rectangle{
         onTriggered: {
             log.lv('Iniciando la carga del archivo: '+f)
             cargarArchivo(f)
+            app.editReqs=false
         }
 
     }
     Component.onCompleted: {
-        chatGptView.l.lv('Bienvenido a Qml-ChatGpt.')
+        if(!apps.markdownEnabled){
+            chatGptView.l.lv('Bienvenido a Qml-ChatGpt.')
+        }else{
+            chatGptView.l.lv('### Bienvenido a Qml-ChatGpt. <br /><br />')
+        }
         if(apps.helpInitEnabled){
             chatGptView.l.lv('Instrucciones: ')
             run('!h')
@@ -158,7 +183,7 @@ Rectangle{
     }
     function isCmd(text){
         let ret=false
-        let cmds=['!e', '!ea', '!se', '!r', '!hi',  '!dev', '!h', '!help', '!l ', '!c', '!cr', '!sr', '!sl', '!cat']
+        let cmds=['!e', '!ea', '!se', '!ec', '!r', '!hi',  '!dev', '!h', '!help', '!l ', '!c', '!cr', '!sr', '!sl', '!cat']
         for(var i=0; i < cmds.length; i++){
             //if(app.dev)log.lv('cmd '+i+': ['+cmds[i]+']')
             if(text.indexOf(cmds[i])>=0){
@@ -199,6 +224,11 @@ Rectangle{
             }
             return
         }
+        //Limpiar requerimientos.
+        if(cmd==='!ec'){
+            chatGptRequestListEditor.clear()
+        }
+
         //Guardando requerimientos.
         if(cmd==='!se'){
             if(cmdList.length<2){
@@ -265,9 +295,9 @@ Rectangle{
             }else{
                 chatGptView.l.lv('Se ha desactivado el modo desarrollador.')
             }
-
         }
         if(cmd==='!ea'){
+            app.editReqs=true
             chatGptRequestListAppend(text)
         }
         if(cmd==='!h' || cmd==='!help' ){
@@ -288,8 +318,23 @@ Rectangle{
             hd+='Limpiar respuestas:\n'
             hd+='!cr\n\n'
 
+            hd+='Hacer foco en el campo de introducción de text inferior:\n'
+            hd+='Presionar la tecla de dirección del teclado hacia abajo.\n\n'
+
+            hd+='Hacer foco en el área de texto superior:\n'
+            hd+='Presionar la tecla de dirección del teclado hacia arriba.\n\n'
+
+            hd+='Dejar de hacer foco en el área de texto superior:\n'
+            hd+='Presionar la una sola vez la tecla Escape.\n\n'
+
             hd+='Ayuda:\n'
             hd+='!h o !help\n\n'
+
+            hd+='Cambiar entre Visores de Respuestas o Requerimientos:\n'
+            hd+='!e o presionar Ctrl+e\n\n'
+
+            hd+='Cerrar la aplicación:\n'
+            hd+='Presionar la tecla Escape varias veces.\n\n'
 
             chatGptView.l.lv(hd)
         }
@@ -352,5 +397,11 @@ Rectangle{
             }
         }
         chatGptRequestListEditor.append(req)
+    }
+    function setLogViewPrompt(text){
+        let lt=log.text
+        let m0=lt.split('\n')
+        let endLine=m0[m0.length-2]
+        console.log('endLine: '+endLine)
     }
 }
