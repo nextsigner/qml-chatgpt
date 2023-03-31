@@ -16,16 +16,19 @@ ApplicationWindow{
     visible: true
     visibility: 'Maximized'
     color: apps.backgroundColor
-    title: 'Qml-ChatGpt by @nextsigner'
+    title: appName+' by @nextsigner'
+    property string appName: 'Qml-Gpt'
     property bool dev: false
     property int fs: apps.fs
     property string apiKey: ''
+
     property bool runInUqp: true
     property bool editReqs: false
     property bool waitingGpt: false
 
 
     Unik{id: unik}
+
     UnikQProcess{
         id: uqp
         onLogOut: {
@@ -82,6 +85,18 @@ ApplicationWindow{
         }
     }
 
+    UnikQProcess{
+        id: uqpOs
+        onLogOut: {
+            chatGptView.l.lv('uqpOs.onLogOut dice: '+data)
+
+        }
+        onLogDataChanged: {
+            chatGptView.l.lv(''+logData+'\n')
+            chatGptView.ti.selectAll()
+        }
+    }
+
     Settings{
         id: apps
         fileName: unik.getPath(5)+'/qml-chatgpt.cfg'
@@ -92,6 +107,8 @@ ApplicationWindow{
         property bool showLog: true
         property bool speakEnabled: true
         property int maximunSecondsForWait: 30
+
+        property string workSpace: unik.getPath(3)+'/'+app.appName
 
         property int vw: 0
 
@@ -172,15 +189,18 @@ ApplicationWindow{
         onActivated: {
             apps.markdownEnabled=!apps.markdownEnabled
             if(apps.markdownEnabled){
-                chatGptView.l.lv('# Se ha habilitado el formato MarkDown.<br />')
+                chatGptView.l.lv('# Se ha habilitado el formato MarkDown. Esta salida a partir de ahora se mostrará en texto plano.<br />')
             }else{
-                chatGptView.l.lv('Se ha deshabilitado el formato MarkDown.')
+                chatGptView.l.lv('Se ha deshabilitado el formato MarkDown. Esta salida a partir de ahora se mostrará en formato Markdown.')
             }
 
         }
     }
     Component.onCompleted: {
         //Check is dev with the arg -dev
+        if(!unik.folderExist(apps.workSpace)){
+            unik.mkdir(apps.workSpace)
+        }
         if(Qt.application.arguments.indexOf('-dev')>=0){
             app.dev=true
         }

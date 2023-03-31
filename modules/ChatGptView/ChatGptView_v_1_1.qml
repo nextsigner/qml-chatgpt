@@ -130,7 +130,7 @@ Rectangle{
                 wrapMode: Text.WordWrap
                 anchors.centerIn: parent
                 onTextChanged: {
-                    setLogViewPrompt(text)
+                    //setLogViewPrompt(text)
                 }
                 Keys.onReturnPressed: {
                     if(!r.isCmd(text)){
@@ -183,7 +183,7 @@ Rectangle{
     }
     function isCmd(text){
         let ret=false
-        let cmds=['!e', '!ea', '!se', '!ec', '!r', '!hi',  '!dev', '!h', '!help', '!l ', '!c', '!cr', '!sr', '!sl', '!cat']
+        let cmds=['!e', '!ea', '!es', '!ec', '!er',  '!r', '!hi',  '!dev', '!h', '!help', '!l ', '!c', '!cr', '!sr', '!sl', '!cat', '!m', '!ls']
         for(var i=0; i < cmds.length; i++){
             //if(app.dev)log.lv('cmd '+i+': ['+cmds[i]+']')
             if(text.indexOf(cmds[i])>=0){
@@ -197,6 +197,18 @@ Rectangle{
         let cmdList=text.split(' ')
         let cmd=cmdList[0]
         //if(app.dev)log.lv('Run cmd: ['+cmd+']')
+
+        //Ejecutar todos los requerimientos desde el editor de requerimientos.
+        //Esto se ejecutará en el objeto UnikQProcess de id: uqp.
+        if(cmd==='!er'){
+            let reqs=chatGptRequestListEditor.getListData()
+            reqs=reqs.replace(/\n/g, '. ')
+            uqp.runWrite(reqs)
+            app.waitingGpt=true
+        }
+
+        //Ejecutar todos los requerimientos de un archivo.
+        //llamando a Python una vez por cada requerimiento.
         if(cmd==='!l'){
             if(unik.fileExist(cmdList[1])){
                 log.lv('Preparando la carga del archivo...')
@@ -214,7 +226,7 @@ Rectangle{
         if(cmd==='!sr'){
             if(cmdList.length<2){
                 log.lv('Error! Falta escribir el nombre del archivo ')
-                log.lv('Ejemplo: !sl /home/miusuario/lista.txt')
+                log.lv('<br />Ejemplo: !sl /home/miusuario/lista.txt')
                 return
             }
             if(!unik.fileExist(cmdList[1])){
@@ -230,24 +242,31 @@ Rectangle{
         }
 
         //Guardando requerimientos.
-        if(cmd==='!se'){
+        if(cmd==='!es'){
             if(cmdList.length<2){
                 log.lv('Error! Falta escribir el nombre del archivo ')
-                log.lv('Ejemplo: !sl /home/miusuario/lista.txt')
+                log.lv('<br />Ejemplo: !sl /home/miusuario/lista.txt')
                 return
             }
-            if(!unik.fileExist(cmdList[1])){
-                log.lv('Guardando requerimiento en el archivo '+cmdList[1])
-                let fileName=cmdList[1]
+            let filePath=''
+            if(cmdList[1].indexOf('/')>=0){
+                filePath=cmdList[1]
+            }else{
+                filePath=apps.workSpace+'/'+cmdList[1]
+            }
+            if(!unik.fileExist(filePath)){
+                log.lv('Guardando requerimiento en el archivo '+filePath)
+                let fileName=filePath
                 chatGptRequestListEditor.saveFileData(fileName)
             }
             return
         }
+
         //Guardar texto de salida
         if(cmd==='!sl'){
             if(cmdList.length<2){
                 log.lv('Error! Falta escribir el nombre del archivo ')
-                log.lv('Ejemplo: !sl /home/miusuario/lista.txt')
+                log.lv('<br />Ejemplo: !sl /home/miusuario/lista.txt')
                 return
             }
             if(!unik.fileExist(cmdList[1])){
@@ -264,10 +283,12 @@ Rectangle{
                 log.lv('El archivo '+cmdList[1]+' ya existe!')
             }
         }
+
+        //Mostrar archivo en salida.
         if(cmd==='!cat'){
             if(cmdList.length<2){
                 log.lv('Error! Falta escribir el nombre del archivo para cargar.')
-                log.lv('Ejemplo: !cat /home/miusuario/lista.txt')
+                log.lv('<br />Ejemplo: !cat /home/miusuario/lista.txt')
                 return
             }
             if(unik.fileExist(cmdList[1])){
@@ -279,15 +300,33 @@ Rectangle{
                 log.lv('El archivo '+cmdList[1]+' no existe!')
             }
         }
+
+        //Listar archivos
+        if(cmd==='!ls'){
+            let folder=''
+            if(cmdList.length>1){
+                folder=cmdList[1]
+            }else{
+                folder=apps.workSpace
+            }
+            log.lv('Mostrando los archivos de la carpeta '+folder+'')
+            uqpOs.run('ls '+folder)
+        }
+
+        //Limpiar salida
         if(cmd==='!c'){
             chatGptView.l.clear()
         }
+
+        //Limpiar lista de respuestas
         if(cmd==='!cr'){
             chatGptResponseList.clear()
         }
         if(cmd==='!e'){
             app.editReqs=!app.editReqs
         }
+
+        //Activar / Desactivar modo desarrollador.
         if(cmd==='!dev'){
             app.dev=!app.dev
             if(app.dev){
@@ -300,41 +339,58 @@ Rectangle{
             app.editReqs=true
             chatGptRequestListAppend(text)
         }
+
+        //Mostrar archivo en salida.
+        if(cmd==='!m'){
+            apps.markdownEnabled=!apps.markdownEnabled
+            if(apps.markdownEnabled){
+                chatGptView.l.lv('# Se ha habilitado el formato MarkDown. Esta salida a partir de ahora se mostrará en texto plano.<br />')
+            }else{
+                chatGptView.l.lv('Se ha deshabilitado el formato MarkDown. Esta salida a partir de ahora se mostrará en formato Markdown.')
+            }
+        }
+
         if(cmd==='!h' || cmd==='!help' ){
             let hd='\n'
 
             hd+='Guardar respuestas en archivo:\n'
-            hd+='!sr <nombre/de/archivo.txt>\n\n'
+            hd+='<br />Ejemplo: !sr <nombre/de/archivo.txt>\n\n'
 
             hd+='Cargar archivo:\n'
-            hd+='!cat <nombre/de/archivo.txt>\n\n'
+            hd+='<br />Ejemplo: !cat <nombre/de/archivo.txt><br />\n\n'
+
+            hd+='Guardar los requerimientos en un archivo:\n'
+            hd+='<br />Ejemplo: !es <archivo/de/listaDePreguntas.txt><br />\n\n'
 
             hd+='Cargar lista de requerimientos:\n'
-            hd+='!l <archivo/de/listaDePreguntas.txt>\n\n'
+            hd+='<br />Ejemplo: !l <archivo/de/listaDePreguntas.txt><br />\n\n'
 
             hd+='Limpiar salida:\n'
-            hd+='!c\n\n'
+            hd+='<br />Ejemplo: !c<br />\n\n'
 
             hd+='Limpiar respuestas:\n'
-            hd+='!cr\n\n'
+            hd+='<br />Ejemplo: !cr<br />\n\n'
+
+            hd+='Salida a formato Markdown o Texto Plano:\n'
+            hd+='<br />Ejemplo: !m<br />\n\n'
 
             hd+='Hacer foco en el campo de introducción de text inferior:\n'
-            hd+='Presionar la tecla de dirección del teclado hacia abajo.\n\n'
+            hd+='<br />Ejemplo: Presionar la tecla de dirección del teclado hacia abajo.<br />\n\n'
 
             hd+='Hacer foco en el área de texto superior:\n'
-            hd+='Presionar la tecla de dirección del teclado hacia arriba.\n\n'
+            hd+='Presionar la tecla de dirección del teclado hacia arriba.<br />\n\n'
 
             hd+='Dejar de hacer foco en el área de texto superior:\n'
-            hd+='Presionar la una sola vez la tecla Escape.\n\n'
+            hd+='Presionar la una sola vez la tecla Escape.<br />\n\n'
 
             hd+='Ayuda:\n'
-            hd+='!h o !help\n\n'
+            hd+='!h o !help<br />\n\n'
 
             hd+='Cambiar entre Visores de Respuestas o Requerimientos:\n'
-            hd+='!e o presionar Ctrl+e\n\n'
+            hd+='!e o presionar Ctrl+e<br />\n\n'
 
             hd+='Cerrar la aplicación:\n'
-            hd+='Presionar la tecla Escape varias veces.\n\n'
+            hd+='Presionar la tecla Escape varias veces.<br />\n\n'
 
             chatGptView.l.lv(hd)
         }
